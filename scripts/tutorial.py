@@ -1,6 +1,7 @@
 from nflows import transforms, distributions, flows
 import torch
 import matplotlib.pyplot as plt
+import os
 
 def make_basic_flow(hidden_features=4):
     # Need to learn what these transforms do/why we might want to use these.
@@ -13,7 +14,7 @@ def make_basic_flow(hidden_features=4):
     return flow
 
 def plot_from_sample(samples, plot_sfx):
-    plt.scatter(samples[:][0], samples[:][1])
+    plt.scatter(samples[:, 0], samples[:, 1])
     plt.savefig(f"plots/tutorial__{plot_sfx}.png")
 
 
@@ -54,23 +55,26 @@ def train_flow(flow, target):
                 plt.savefig(f"plots/tutorial__flow_training__iteration{i}.png")
 
 def main():
+    if not os.path.exists("plots"):
+        os.makedirs("plots")
+
     n_samples = 1000
 
     # Generate some target data.
     # Shift and scale it to make it different from the base distribution.
-    print("Generating target data...")
+    print("INFO:\tGenerating target data...")
     torch.manual_seed(42)
     target = 2.0 * torch.randn(n_samples, 2) + 5
     plot_from_sample(target, "target_sample")
 
-    print("Instantiating flow...")
+    print("INFO:\tInstantiating flow...")
     flow = make_basic_flow()
     plot_from_sample(sample_flow(flow, n_samples), "flow_sample_pretrain")
 
-    print("Training flow...")
+    print("INFO:\tTraining flow...")
     train_flow(flow, target)
     plot_from_sample(sample_flow(flow, n_samples), "flow_sample_posttrain")
-    print("Flow training. Please find plots under plots/")
+    print("INFO:\tFlow training complete. Please find plots under plots/")
 
 if __name__ == "__main__":
     main()
