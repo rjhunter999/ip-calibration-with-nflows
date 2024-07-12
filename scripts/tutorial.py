@@ -14,6 +14,7 @@ def make_basic_flow(hidden_features=4):
     return flow
 
 def plot_from_sample(samples, plot_sfx):
+    plt.figure()
     plt.scatter(samples[:, 0], samples[:, 1])
     plt.savefig(f"plots/tutorial__{plot_sfx}.png")
 
