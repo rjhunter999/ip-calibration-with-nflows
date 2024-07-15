@@ -5,9 +5,15 @@ import os
 import numpy as np
 import uproot
 
+
 def make_1d_quad_flow():
     N_FEATURES = 1
-    return flows.Flow(transform=transforms.PiecewiseRationalQuadraticCDF(shape=N_FEATURES, tails='linear', tail_bound=4, num_bins=3 ), distribution=distributions.StandardNormal(shape=[N_FEATURES]))
+    return flows.Flow(
+        transform=transforms.PiecewiseRationalQuadraticCDF(
+            shape=N_FEATURES, tails='linear',
+            tail_bound=4, num_bins=3),
+        distribution=distributions.StandardNormal(shape=[N_FEATURES])
+    )
 
 
 def plot_from_sample(samples, plot_sfx):
@@ -21,65 +27,62 @@ def plot_from_sample(samples, plot_sfx):
 
 
 def sample_flow(flow, n_samples):
-    with torch.inference_mode():
-        samples = flow.sample(n_samples)
-        print(f"Taken {n_samples} samples from flow.\nsamples.shape: {samples.shape}")
-        return samples
+    samples = flow.sample(n_samples)
+    return samples
 
 
 def train_flow(flow, target_data, n_iter, xrange=(-4, 0)):
+    # Train the flow, and periodically plot the results
     binning = dict(bins=100, range=xrange)
-    
+
     # Setup the plot
     _, ax = plt.subplots(2, 3, figsize=(15, 10))
-    ax = ax.flatten() 
-    i_fig = 0
-    # Plot the target
+    ax = ax.flatten()
     hist_target, bins = np.histogram(target_data, **binning)
+    i_fig = 0
 
     optimizer = torch.optim.Adam(flow.parameters())
-    # Start training and adding to the plot periodically
     for i in range(n_iter+1):
         optimizer.zero_grad()
         loss = -flow.log_prob(inputs=target_data).mean()
         loss.backward()
         optimizer.step()
-        ### Testing the thing
+
+        if i % (n_iter/5) != 0:
+            continue
+
         with torch.inference_mode():
-            if i % (n_iter/5) == 0:
-                print(f"Loss at iteration {i}: {loss}")
-                ax[i_fig].set_title(f"Iteration {i}: Loss = {loss:.5f}")
-                ax[i_fig].bar(x=bins[:-1], height=hist_target, yerr=np.sqrt(hist_target), width=bins[1] - bins[0], label='MC', fill=False, edgecolor='blue')
-                ax[i_fig].set_xlabel('log10(IP / mm)')
-                ax[i_fig].set_ylabel('Candidates / bin')
+            print(f"Loss at iteration {i}: {loss}")
+            ax[i_fig].set_title(f"Iteration {i}: Loss = {loss:.5f}")
+            ax[i_fig].bar(x=bins[:-1], height=hist_target, yerr=np.sqrt(hist_target), width=bins[1] - bins[0], label='MC', fill=False, edgecolor='blue')
+            ax[i_fig].set_xlabel('log10(IP / mm)')
+            ax[i_fig].set_ylabel('Candidates / bin')
 
-                # Sample from the flow and plot the histogram
-                samples = flow.sample(target_data.shape[0])
-                pred_hist, bins = np.histogram(samples, **binning)
-                ax[i_fig].bar(x=bins[:-1], height=pred_hist, yerr=np.sqrt(pred_hist), width=bins[1] - bins[0], label='Flow', fill=False, edgecolor='red')
+            # Sample from the flow and plot the histogram
+            samples = sample_flow(flow, target_data.shape[0])
+            pred_hist, bins = np.histogram(samples, **binning)
+            ax[i_fig].bar(x=bins[:-1], height=pred_hist, yerr=np.sqrt(pred_hist), width=bins[1] - bins[0], label='Flow', fill=False, edgecolor='red')
 
-                ax[i_fig].legend()
-        
-                i_fig+=1
+            ax[i_fig].legend()
+            i_fig += 1
 
     plt.savefig("plots/first_flow__training.png")
 
-# Let's first load up the simulated data and put it into a 1D numpy array
+
 def load_data(n_samples):
+    # Load up the simulated data and put it into a 1D numpy array
     file = uproot.open("data/tuple_for_training__Z.root")
-    muon_prefix = "mup_" # could also use mum_
+    muon_prefix = "mup_"  # could also use mum_
     branch = f'{muon_prefix}IP'
     selection = "(1>0)"
     sim_ip = file['DecayTree'].arrays(
         branch, cut=selection, library='np')[branch].astype(np.float64)
 
+    # take first n_samples from sim_log10_ip
     sim_log10_ip = np.log10(sim_ip)[:, :n_samples]
-    # take first N_SAMPLES from sim_log10_ip
-    print(sim_log10_ip.shape)
 
-    # Reshape was needed to swap the axes to match what the flow expects
+    # Reshape needed to swap the axes to match what the flow expects
     sim_log10_ip = torch.tensor(sim_log10_ip, dtype=torch.float32).reshape(-1, 1)
-    print(sim_log10_ip.shape)
     return sim_log10_ip
 
 
@@ -116,11 +119,11 @@ def benchmark_hep_style(flow, target, xrange=(-3.5, -0.5)):
     pull = (num_hist - pred_hist) / np.sqrt(np.abs(num_hist) + np.abs(pred_hist))
     ax[2].bar(x=bins[:-1], height=pull, yerr=np.zeros_like(pull), width=bins[1] - bins[0], label='Pull', fill=True, edgecolor='blue')
     ax[2].set_ylabel('Pull')
-    ax[2].set_ylim([-5 , 5])
+    ax[2].set_ylim([-5, 5])
     print(f"The sum of squared residuals is {np.sum(pull**2)}")
     ax[2].set_xlabel('log10(IP / mm)')
 
-    plt.savefig(f"plots/first_flow__performance.png")
+    plt.savefig("plots/first_flow__performance.png")
 
 
 def main():
@@ -130,22 +133,28 @@ def main():
 
     print("INFO:\tLoading target data...")
     n_samples = 10000
+    print(f"INFO:\tWill use {n_samples} samples throughout...")
     target_data = load_data(n_samples)
     plot_from_sample(target_data, "target_sample")
 
     torch.manual_seed(42)
     print("INFO:\tInstantiating spline flow...")
     quad_flow = make_1d_quad_flow()
-    plot_from_sample(sample_flow(quad_flow, n_samples), "flow_sample_pretrain")
+    with torch.inference_mode():
+        plot_from_sample(
+            sample_flow(quad_flow, n_samples), "flow_sample_pretrain")
 
     print("INFO:\tTraining flow...")
-    train_flow(quad_flow, target_data, n_iter=10000 )
-    plot_from_sample(sample_flow(quad_flow, n_samples), "flow_sample_posttrain")
+    train_flow(quad_flow, target_data, n_iter=10000)
+    with torch.inference_mode():
+        plot_from_sample(
+            sample_flow(quad_flow, n_samples), "flow_sample_posttrain")
 
     with torch.inference_mode():
         benchmark_hep_style(quad_flow, target_data)
 
     print("INFO:\tFlow training complete. Please find plots under plots/")
+
 
 if __name__ == "__main__":
     main()
