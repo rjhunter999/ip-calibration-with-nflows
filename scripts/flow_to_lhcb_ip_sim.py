@@ -83,6 +83,46 @@ def load_data(n_samples):
     return sim_log10_ip
 
 
+def benchmark_hep_style(flow, target, xrange=(-3.5, -0.5)):
+    # Please use with torch.inference_mode
+
+    # Divide the canvas into 2 vertically
+    _, ax = plt.subplots(3, 1, figsize=(6, 12))
+
+    bin_opts = dict(bins=50, range=xrange)
+    num_hist, bins = np.histogram(target, **bin_opts)
+
+    samples = flow.sample(target.shape[0])
+    pred_hist, bins = np.histogram(samples, **bin_opts)
+
+    # Plot the two distributions
+    ax[0].bar(x=bins[:-1], height=num_hist, yerr=np.sqrt(num_hist), width=bins[1] - bins[0], label='MC', fill=False)
+    ax[0].bar(x=bins[:-1], height=pred_hist, yerr=np.sqrt(pred_hist), width=bins[1] - bins[0], label='Flow', fill=False, edgecolor='red', capsize=0)
+    ax[0].legend()
+
+    # Evaluate a chi2 - treat them as two independent distributions
+    resid = np.where(np.isclose(num_hist, 0), 0, (num_hist - pred_hist)**2 / (np.abs(num_hist) + np.abs(pred_hist)))
+    chi2 = np.sum(resid)
+    nbins = len(num_hist)
+    print(f"Chi2/nbins: {chi2}/{nbins} = {chi2/nbins}")
+
+    ratio = num_hist / pred_hist
+    ax[1].axhline(y=1, color='gray', linestyle='--')
+    ax[1].errorbar(x=bins[:-1], y=ratio, yerr=np.sqrt((ratio**2 / np.abs(num_hist)) + (ratio**2/np.abs(pred_hist))), xerr=bins[1] - bins[0], label='Ratio', ls='')
+    ax[1].set_ylim([0.5, 1.5])
+    ax[1].set_ylabel('Ratio')
+
+    # Calculate pull histogram
+    pull = (num_hist - pred_hist) / np.sqrt(np.abs(num_hist) + np.abs(pred_hist))
+    ax[2].bar(x=bins[:-1], height=pull, yerr=np.zeros_like(pull), width=bins[1] - bins[0], label='Pull', fill=True, edgecolor='blue')
+    ax[2].set_ylabel('Pull')
+    ax[2].set_ylim([-5 , 5])
+    print(f"The sum of squared residuals is {np.sum(pull**2)}")
+    ax[2].set_xlabel('log10(IP / mm)')
+
+    plt.savefig(f"plots/first_flow__performance.png")
+
+
 def main():
 
     if not os.path.exists("plots"):
@@ -101,6 +141,10 @@ def main():
     print("INFO:\tTraining flow...")
     train_flow(quad_flow, target_data, n_iter=10000 )
     plot_from_sample(sample_flow(quad_flow, n_samples), "flow_sample_posttrain")
+
+    with torch.inference_mode():
+        benchmark_hep_style(quad_flow, target_data)
+
     print("INFO:\tFlow training complete. Please find plots under plots/")
 
 if __name__ == "__main__":
