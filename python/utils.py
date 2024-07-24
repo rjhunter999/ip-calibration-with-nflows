@@ -15,14 +15,13 @@ def make_1d_quad_flow():
     )
 
 
-def plot_from_sample(samples, plot_sfx):
+def plot_from_sample(samples, plot_path):
     _, ax = plt.subplots()
     hist, bins = np.histogram(samples, bins=100, range=(-4, 0))
-    ax.bar(x=bins[:-1], height=hist, yerr=np.sqrt(hist), width=bins[1] - bins[0], label=plot_sfx)
+    ax.bar(x=bins[:-1], height=hist, yerr=np.sqrt(hist), width=bins[1] - bins[0])
     ax.set_xlabel('log10(IP / mm)')
     ax.set_ylabel('Candidates / bin')
-    ax.legend()
-    plt.savefig(f"plots/first_flow__{plot_sfx}.png")
+    plt.savefig(plot_path)
 
 
 def sample_flow(flow, n_samples):
@@ -30,7 +29,7 @@ def sample_flow(flow, n_samples):
     return samples
 
 
-def train_flow(flow, target_data, n_iter, xrange=(-4, 0)):
+def train_flow(flow, target_data, n_iter, plot_path, xrange=(-4, 0)):
     # Train the flow, and periodically plot the results
     binning = dict(bins=100, range=xrange)
 
@@ -65,27 +64,27 @@ def train_flow(flow, target_data, n_iter, xrange=(-4, 0)):
             ax[i_fig].legend()
             i_fig += 1
 
-    plt.savefig("plots/first_flow__training.png")
+    plt.savefig(plot_path)
 
 
-def load_data(n_samples):
+def load_data(sample_type, n_samples):
     # Load up the simulated data and put it into a 1D numpy array
-    file = uproot.open("data/tuple_for_training__Z.root")
+    file = uproot.open(f"data/tuple_for_training__{sample_type}.root")
     muon_prefix = "mup_"  # could also use mum_
     branch = f'{muon_prefix}IP'
     selection = "(1>0)"
-    sim_ip = file['DecayTree'].arrays(
+    ip_arr = file['DecayTree'].arrays(
         branch, cut=selection, library='np')[branch].astype(np.float64)
 
     # take first n_samples from sim_log10_ip
-    sim_log10_ip = np.log10(sim_ip)[:, :n_samples]
+    log10_ip_arr = np.log10(ip_arr)[:, :n_samples]
 
     # Reshape needed to swap the axes to match what the flow expects
-    sim_log10_ip = torch.tensor(sim_log10_ip, dtype=torch.float32).reshape(-1, 1)
-    return sim_log10_ip
+    log10_ip_arr = torch.tensor(log10_ip_arr, dtype=torch.float32).reshape(-1, 1)
+    return log10_ip_arr
 
 
-def benchmark_hep_style(flow, target, xrange=(-3.5, -0.5)):
+def benchmark_hep_style(flow, target, plot_path, xrange=(-3.5, -0.5)):
     # Please use with torch.inference_mode
 
     # Divide the canvas into 2 vertically
@@ -122,4 +121,4 @@ def benchmark_hep_style(flow, target, xrange=(-3.5, -0.5)):
     print(f"The sum of squared residuals is {np.sum(pull**2)}")
     ax[2].set_xlabel('log10(IP / mm)')
 
-    plt.savefig("plots/first_flow__performance.png")
+    plt.savefig(plot_path)
