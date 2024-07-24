@@ -16,7 +16,7 @@ def plot_single_transform(target_sample: torch.Tensor, init_sample: torch.Tensor
     bin_opts = dict(bins=nbins, range=xrange)
     target_hist, bins = np.histogram(target_sample, **bin_opts)
 
-    transformed = transforms.InverseTransform(transform)(init_sample)
+    transformed = transform(init_sample)
 
     _, ax = plt.subplots()
     bin_centres = (bins[1:] + bins[:-1]) / 2
@@ -32,7 +32,7 @@ def main():
     if not os.path.exists("plots"):
         os.makedirs("plots")
 
-    n_candidates = 1000
+    n_candidates = 1000 # 100k works well
     datasets = {target_sample: utils.load_data(target_sample, n_candidates) for target_sample in ('Z', 'DATA')}
 
     # Train two flows, one to model the LHCb data, and one to model the LHCb simulation
@@ -54,6 +54,7 @@ def main():
                 utils.sample_flow(quad_flow, n_candidates), plot_path(target_sample, "pretrain"))
 
         print("INFO:\tTraining flow...")
+        # Generally requires 10k iterations
         utils.train_flow(quad_flow, target_data, n_iter=1000, plot_path=plot_path(target_sample, "training"))
         with torch.inference_mode():
             utils.plot_from_sample(
@@ -69,7 +70,8 @@ def main():
     for target_sample, transform in trained_transforms.items():
         with torch.inference_mode():
             init_noise = torch.randn(1000, 1)
-            plot_single_transform(datasets[target_sample], init_noise, transform, plot_path(target_sample, "transform_validation"))
+            # Remember that the transform is from the target -> noise
+            plot_single_transform(datasets[target_sample], init_noise, transforms.InverseTransform(transform), plot_path(target_sample, "transform_validation"))
 
     print("INFO:\tPutting the two transforms together...")
     # A forward transform goes from target -> noise
