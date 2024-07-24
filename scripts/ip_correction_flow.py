@@ -21,7 +21,7 @@ def plot_single_transform(target_sample: torch.Tensor, init_sample: torch.Tensor
 
     _, ax = plt.subplots()
     bin_centres = (bins[1:] + bins[:-1]) / 2
-    ax.errorbar(bin_centres, target_hist, yerr=np.sqrt(target_hist), fmt='+', label="Target", color='black')
+    ax.errorbar(bin_centres, target_hist, yerr=np.sqrt(target_hist), fmt='.', label="Target", color='black')
     ax.hist(init_sample.numpy(), bins, histtype="stepfilled", label='Initial', facecolor='blue', alpha=0.3)
     ax.hist(transformed[0].numpy(), bins, histtype="stepfilled", label='Transformed', facecolor='red', alpha=0.3)
     ax.legend()
