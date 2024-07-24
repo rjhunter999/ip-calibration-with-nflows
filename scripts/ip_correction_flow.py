@@ -5,6 +5,7 @@ import utils
 import numpy as np
 from nflows import transforms
 import matplotlib.pyplot as plt
+import argparse
 
 
 def plot_path(sample_type, sfx):
@@ -28,11 +29,20 @@ def plot_single_transform(target_sample: torch.Tensor, init_sample: torch.Tensor
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Train a flow to correct the LHCb IP simulation to match the data.")
+    parser.add_argument("--test", action="store_true", help="Run with smaller datasets and less training iterations for testing purposes.")
+    args = parser.parse_args()
+
+    if args.test:
+        n_candidates = 100
+        n_iter = 100
+    else:
+        n_candidates = 100000
+        n_iter = 10000
 
     if not os.path.exists("plots"):
         os.makedirs("plots")
 
-    n_candidates = 1000 # 100k works well
     datasets = {target_sample: utils.load_data(target_sample, n_candidates) for target_sample in ('Z', 'DATA')}
 
     # Train two flows, one to model the LHCb data, and one to model the LHCb simulation
@@ -55,7 +65,7 @@ def main():
 
         print("INFO:\tTraining flow...")
         # Generally requires 10k iterations
-        utils.train_flow(quad_flow, target_data, n_iter=1000, plot_path=plot_path(target_sample, "training"))
+        utils.train_flow(quad_flow, target_data, n_iter=n_iter, plot_path=plot_path(target_sample, "training"))
         with torch.inference_mode():
             utils.plot_from_sample(
                 utils.sample_flow(quad_flow, n_candidates), plot_path(target_sample, "posttrain"))
@@ -69,7 +79,7 @@ def main():
     # Make sure each transform individually is working
     for target_sample, transform in trained_transforms.items():
         with torch.inference_mode():
-            init_noise = torch.randn(1000, 1)
+            init_noise = torch.randn(n_candidates, 1)
             # Remember that the transform is from the target -> noise
             plot_single_transform(datasets[target_sample], init_noise, transforms.InverseTransform(transform), plot_path(target_sample, "transform_validation"))
 
