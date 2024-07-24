@@ -10,7 +10,7 @@ def main():
         os.makedirs("plots")
 
     print("INFO:\tLoading target data...")
-    n_samples = 10
+    n_samples = 10000
     print(f"INFO:\tWill use {n_samples} samples throughout...")
     target_data = utils.load_data(n_samples)
     utils.plot_from_sample(target_data, "target_sample")
@@ -23,7 +23,7 @@ def main():
             utils.sample_flow(quad_flow, n_samples), "flow_sample_pretrain")
 
     print("INFO:\tTraining flow...")
-    utils.train_flow(quad_flow, target_data, n_iter=10)
+    utils.train_flow(quad_flow, target_data, n_iter=10000)
     with torch.inference_mode():
         utils.plot_from_sample(
             utils.sample_flow(quad_flow, n_samples), "flow_sample_posttrain")
