@@ -5,12 +5,14 @@ from nflows import transforms, distributions, flows
 import numpy as np
 import uproot
 
+
 def make_1d_quad_flow():
     N_FEATURES = 1
-    return flows.Flow(
-        transform=transforms.PiecewiseRationalQuadraticCDF(
+    transform = transforms.PiecewiseRationalQuadraticCDF(
             shape=N_FEATURES, tails='linear',
-            tail_bound=4, num_bins=3),
+            tail_bound=4, num_bins=3)
+    return transform, flows.Flow(
+        transform=transform,
         distribution=distributions.StandardNormal(shape=[N_FEATURES])
     )
 

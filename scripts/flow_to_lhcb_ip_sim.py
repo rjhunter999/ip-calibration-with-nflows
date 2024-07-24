@@ -22,7 +22,7 @@ def main():
 
     torch.manual_seed(42)
     print("INFO:\tInstantiating spline flow...")
-    quad_flow = utils.make_1d_quad_flow()
+    _, quad_flow = utils.make_1d_quad_flow()
     with torch.inference_mode():
         utils.plot_from_sample(
             utils.sample_flow(quad_flow, n_samples), plot_path("flow_sample_pretrain"))
