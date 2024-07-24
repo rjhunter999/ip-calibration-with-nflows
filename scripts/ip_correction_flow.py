@@ -24,6 +24,8 @@ def plot_single_transform(target_sample: torch.Tensor, init_sample: torch.Tensor
     ax.errorbar(bin_centres, target_hist, yerr=np.sqrt(target_hist), fmt='.', label="Target", color='black')
     ax.hist(init_sample.numpy(), bins, histtype="stepfilled", label='Initial', facecolor='blue', alpha=0.3)
     ax.hist(transformed[0].numpy(), bins, histtype="stepfilled", label='Transformed', facecolor='red', alpha=0.3)
+    ax.set_ylabel("Candidates / bin")
+    ax.set_xlabel('log10(IP / mm)')
     ax.legend()
     plt.savefig(plot_path)
 
