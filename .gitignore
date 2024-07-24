@@ -1,3 +1,4 @@
 data/
 *.png
 *.pdf
+python/__pycache__/
