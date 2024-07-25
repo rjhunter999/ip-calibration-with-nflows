@@ -14,6 +14,8 @@ This was all neatened up into a script under `scripts/tutorial.py`.
 
 `notebooks/extracting_transformations.ipynb` shows investigations in how to extract the trained transformation from a flow, its inverse, and how to then put two transformations together.
 
+Training a flow to derive the correction to the simulation and get the above plot is achieved by `scripts/ip_correction_flow.py`. Note that this script has a `--test` argument that runs on smaller samples and trains for less iterations for quick prototyping.
+
 ## Setup instructions
 
 Before running any of the python scripts, setup the environment with:
