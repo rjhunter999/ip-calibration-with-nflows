@@ -18,16 +18,34 @@ def plot_single_transform(target_sample: torch.Tensor, init_sample: torch.Tensor
     target_hist, bins = np.histogram(target_sample, **bin_opts)
 
     transformed = transform(init_sample)
+    transformed_arr = transformed[0].numpy()
+    init_sample_arr = init_sample.numpy()
 
-    _, ax = plt.subplots()
+    _, (ax_top, ax_bot) = plt.subplots(2,
+                                       1,
+                                       figsize=(6, 6),
+                                       sharex=True,
+                                       gridspec_kw={
+                                           'height_ratios': (3, 1),
+                                           'hspace': 0.15,
+                                       })
+
     bin_centres = (bins[1:] + bins[:-1]) / 2
-    ax.errorbar(bin_centres, target_hist, yerr=np.sqrt(target_hist), fmt='.', label="Target", color='black')
-    ax.hist(init_sample.numpy(), bins, histtype="stepfilled", label='Initial', facecolor='blue', alpha=0.3)
-    ax.hist(transformed[0].numpy(), bins, histtype="stepfilled", label='Transformed', facecolor='red', alpha=0.3)
-    ax.set_ylabel("Candidates / bin")
-    ax.set_xlabel('log10(IP / mm)')
-    ax.legend()
-    plt.savefig(plot_path)
+    ax_top.errorbar(bin_centres, target_hist, yerr=np.sqrt(target_hist), fmt='.', label="Target", color='black')
+    ax_top.hist(init_sample_arr, bins, histtype="stepfilled", label='Initial', facecolor='blue', alpha=0.3)
+    ax_top.hist(transformed_arr, bins, histtype="stepfilled", label='Transformed', facecolor='red', alpha=0.3)
+    ax_top.set_ylabel("Candidates / bin")
+    ax_top.legend()
+
+    transformed_hist, bins = np.histogram(transformed_arr, **bin_opts)
+    ratio = transformed_hist / target_hist
+    ratio_err = np.sqrt((transformed_hist + target_hist) / (transformed_hist*target_hist))
+    ax_bot.axhline(y=1, color='gray', linestyle='--')
+    ax_bot.errorbar(bin_centres, ratio, yerr=ratio_err, fmt='.', color='black')
+    ax_bot.set_ylim([0.5, 1.5])
+    ax_bot.set_xlabel('log10(IP / mm)')
+    ax_bot.set_ylabel('Ratio')
+    plt.savefig(plot_path, bbox_inches='tight')
 
 
 def main():
