@@ -6,7 +6,7 @@ import numpy as np
 import uproot
 
 
-def make_1d_quad_flow():
+def make_1d_quad_flow() -> tuple[transforms.Transform, flows.Flow]:
     N_FEATURES = 1
     transform = transforms.PiecewiseRationalQuadraticCDF(
             shape=N_FEATURES, tails='linear',
@@ -17,7 +17,7 @@ def make_1d_quad_flow():
     )
 
 
-def plot_from_sample(samples, plot_path):
+def plot_from_sample(samples: torch.Tensor, plot_path: str) -> None:
     _, ax = plt.subplots()
     hist, bins = np.histogram(samples, bins=100, range=(-4, 0))
     ax.bar(x=bins[:-1], height=hist, yerr=np.sqrt(hist), width=bins[1] - bins[0])
@@ -26,12 +26,12 @@ def plot_from_sample(samples, plot_path):
     plt.savefig(plot_path)
 
 
-def sample_flow(flow, n_samples):
+def sample_flow(flow: flows.Flow, n_samples: int) -> torch.Tensor:
     samples = flow.sample(n_samples)
     return samples
 
 
-def train_flow(flow, target_data, n_iter, plot_path, xrange=(-4, 0)):
+def train_flow(flow: flows.Flow, target_data: torch.Tensor, n_iter: int, plot_path: str, xrange=(-4, 0)) -> None:
     # Train the flow, and periodically plot the results
     binning = dict(bins=100, range=xrange)
 
@@ -69,7 +69,7 @@ def train_flow(flow, target_data, n_iter, plot_path, xrange=(-4, 0)):
     plt.savefig(plot_path)
 
 
-def load_data(sample_type, n_samples):
+def load_data(sample_type: str, n_samples: int) -> torch.Tensor:
     # Load up the simulated data and put it into a 1D numpy array
     file = uproot.open(f"data/tuple_for_training__{sample_type}.root")
     muon_prefix = "mup_"  # could also use mum_
@@ -86,7 +86,7 @@ def load_data(sample_type, n_samples):
     return log10_ip_arr
 
 
-def benchmark_hep_style(flow, target, plot_path, xrange=(-3.5, -0.5)):
+def benchmark_hep_style(flow: flows.Flow, target: torch.Tensor, plot_path: str, xrange=(-3.5, -0.5)) -> None:
     # Please use with torch.inference_mode
 
     # Divide the canvas into 2 vertically
