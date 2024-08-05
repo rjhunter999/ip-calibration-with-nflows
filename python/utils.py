@@ -31,7 +31,7 @@ def sample_flow(flow: flows.Flow, n_samples: int) -> torch.Tensor:
     return samples
 
 
-def train_flow(flow: flows.Flow, target_data: torch.Tensor, n_iter: int, plot_path: str, xrange=(-4, 0)) -> None:
+def train_flow(flow: flows.Flow, target_data: torch.Tensor, n_iter: int, plot_path: str, xrange=(-4, 0), use_gpu=False) -> None:
     # Train the flow, and periodically plot the results
     binning = dict(bins=100, range=xrange)
 
@@ -40,6 +40,12 @@ def train_flow(flow: flows.Flow, target_data: torch.Tensor, n_iter: int, plot_pa
     ax = ax.flatten()
     hist_target, bins = np.histogram(target_data, **binning)
     i_fig = 0
+
+    # Put everything on the GPU if it is available and desired
+    device = "cuda" if (torch.cuda.is_available() and use_gpu) else "cpu"
+    print(f"INFO:\tUsing device: {device}")
+    target_data = target_data.to(device)
+    flow = flow.to(device)
 
     optimizer = torch.optim.Adam(flow.parameters())
     for i in range(n_iter+1):
@@ -60,13 +66,17 @@ def train_flow(flow: flows.Flow, target_data: torch.Tensor, n_iter: int, plot_pa
 
             # Sample from the flow and plot the histogram
             samples = sample_flow(flow, target_data.shape[0])
-            pred_hist, bins = np.histogram(samples, **binning)
+            pred_hist, bins = np.histogram(samples.cpu(), **binning) # move to cpu for plotting
             ax[i_fig].bar(x=bins[:-1], height=pred_hist, yerr=np.sqrt(pred_hist), width=bins[1] - bins[0], label='Flow', fill=False, edgecolor='red')
 
             ax[i_fig].legend()
             i_fig += 1
 
     plt.savefig(plot_path)
+
+    # Put everything back on the CPU for plotting etc. downstream
+    target_data.cpu()
+    flow.cpu()
 
 
 def load_data(sample_type: str, n_samples: int) -> torch.Tensor:
