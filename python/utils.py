@@ -57,7 +57,6 @@ def train_flow(flow: flows.Flow, target_data: torch.Tensor, n_iter: int, plot_pa
         if batch_the_data:
             loss = 0
             for batch in target_data_dl:
-                # batch = batch.to(device)
                 optimizer.zero_grad()
                 batch_loss = -flow.log_prob(inputs=batch).mean()
                 loss += batch_loss
