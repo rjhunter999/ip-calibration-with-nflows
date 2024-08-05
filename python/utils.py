@@ -31,8 +31,9 @@ def sample_flow(flow: flows.Flow, n_samples: int) -> torch.Tensor:
     return samples
 
 
-def train_flow(flow: flows.Flow, target_data: torch.Tensor, n_iter: int, plot_path: str, xrange=(-4, 0), use_gpu=False) -> None:
+def train_flow(flow: flows.Flow, target_data: torch.Tensor, n_iter: int, plot_path: str, xrange=(-4, 0), use_gpu=False, batch_the_data=False) -> None:
     # Train the flow, and periodically plot the results
+    # Batching the data for 100k events with 1 input feature is slower than not batching, but it was interesting to add the functionality.
     binning = dict(bins=100, range=xrange)
 
     # Setup the plot
@@ -44,15 +45,29 @@ def train_flow(flow: flows.Flow, target_data: torch.Tensor, n_iter: int, plot_pa
     # Put everything on the GPU if it is available and desired
     device = "cuda" if (torch.cuda.is_available() and use_gpu) else "cpu"
     print(f"INFO:\tUsing device: {device}")
-    target_data = target_data.to(device)
     flow = flow.to(device)
+    target_data = target_data.to(device)
+    if batch_the_data:
+        batch_size = 64
+        target_data_dl = torch.utils.data.DataLoader(target_data, batch_size=batch_size, shuffle=False)
 
     optimizer = torch.optim.Adam(flow.parameters())
     for i in range(n_iter+1):
-        optimizer.zero_grad()
-        loss = -flow.log_prob(inputs=target_data).mean()
-        loss.backward()
-        optimizer.step()
+
+        if batch_the_data:
+            loss = 0
+            for batch in target_data_dl:
+                # batch = batch.to(device)
+                optimizer.zero_grad()
+                batch_loss = -flow.log_prob(inputs=batch).mean()
+                loss += batch_loss
+                batch_loss.backward()
+                optimizer.step()
+        else:
+            optimizer.zero_grad()
+            loss = -flow.log_prob(inputs=target_data).mean()
+            loss.backward()
+            optimizer.step()
 
         if i % (n_iter/5) != 0:
             continue
