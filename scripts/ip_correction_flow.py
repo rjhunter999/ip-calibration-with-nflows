@@ -51,6 +51,7 @@ def plot_single_transform(target_sample: torch.Tensor, init_sample: torch.Tensor
 def main():
     parser = argparse.ArgumentParser(description="Train a flow to correct the LHCb IP simulation to match the data.")
     parser.add_argument("--test", action="store_true", help="Run with smaller datasets and less training iterations for testing purposes.")
+    parser.add_argument("--train-on-gpu", action="store_true")
     args = parser.parse_args()
 
     if args.test:
@@ -85,12 +86,10 @@ def main():
 
         print("INFO:\tTraining flow...")
         # Generally requires 10k iterations
-        utils.train_flow(quad_flow, target_data, n_iter=n_iter, plot_path=plot_path(target_sample, "training"))
+        utils.train_flow(quad_flow, target_data, n_iter=n_iter, plot_path=plot_path(target_sample, "training"), use_gpu=args.train_on_gpu)
         with torch.inference_mode():
             utils.plot_from_sample(
                 utils.sample_flow(quad_flow, n_candidates), plot_path(target_sample, "posttrain"))
-
-        with torch.inference_mode():
             utils.benchmark_hep_style(quad_flow, target_data, plot_path=plot_path(target_sample, "performance_plots"))
 
         trained_transforms[target_sample] = transform
