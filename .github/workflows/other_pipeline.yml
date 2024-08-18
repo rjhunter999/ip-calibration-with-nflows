@@ -1,0 +1,7 @@
+name: On PR
+on: [pull_request]
+jobs:
+  Testo:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Your other pipeline is running!"
