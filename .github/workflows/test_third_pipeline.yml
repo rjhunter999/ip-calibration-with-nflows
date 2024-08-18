@@ -1,9 +1,0 @@
-name: Use reusable workflow
-run-name: Use reusable workflow
-on: [push]
-jobs:
-  call-workflow:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "This is the main workflow"
-      - uses: ./.github/workflows/github-ci.yml
