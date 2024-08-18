@@ -1,0 +1,16 @@
+name: Build, check formatting and test
+run-name: ${{ github.actor }} pipeline
+on: [push]
+jobs:
+  TestJob:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+      - uses: pre-commit/action@v3.0.1
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+      - name: Check pre-commit
+        run: |
+          pre-commit run --all-files

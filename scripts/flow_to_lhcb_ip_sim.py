@@ -25,14 +25,24 @@ def main():
     _, quad_flow = utils.make_1d_quad_flow()
     with torch.inference_mode():
         utils.plot_from_sample(
-            utils.sample_flow(quad_flow, n_samples), plot_path("flow_sample_pretrain"))
+            utils.sample_flow(quad_flow, n_samples), plot_path("flow_sample_pretrain")
+        )
 
     print("INFO:\tTraining flow...")
-    utils.train_flow(quad_flow, target_data, n_iter=10000, plot_path=plot_path("training"), use_gpu=True)
+    utils.train_flow(
+        quad_flow,
+        target_data,
+        n_iter=10000,
+        plot_path=plot_path("training"),
+        use_gpu=True,
+    )
     with torch.inference_mode():
         utils.plot_from_sample(
-            utils.sample_flow(quad_flow, n_samples), plot_path("flow_sample_posttrain"))
-        utils.benchmark_hep_style(quad_flow, target_data, plot_path=plot_path("performance_plots"))
+            utils.sample_flow(quad_flow, n_samples), plot_path("flow_sample_posttrain")
+        )
+        utils.benchmark_hep_style(
+            quad_flow, target_data, plot_path=plot_path("performance_plots")
+        )
 
     print("INFO:\tFlow training complete. Please find plots under plots/")
 

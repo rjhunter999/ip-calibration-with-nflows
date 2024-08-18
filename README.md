@@ -1,7 +1,7 @@
 # ip-calibration-with-nflows
 Small project to investigate if the mismodelling in the LHCb simulation of the muon impact parameter resolution of Z decays can be corrected/described using normalising flows.
 
-Studies here have shown that this can be done, for example the below plot shows a histogram of the LHCb data, and then histograms of the corrected and uncorrected simulation, where the correction is a composite transformation derived from a trained flow. The ratio of the data to the corrected simulation is shown in the lower panel, giving generally good agreement within statistical uncertainty of the samples, although struggling a little with the shape of high-IP tail. 
+Studies here have shown that this can be done, for example the below plot shows a histogram of the LHCb data, and then histograms of the corrected and uncorrected simulation, where the correction is a composite transformation derived from a trained flow. The ratio of the data to the corrected simulation is shown in the lower panel, giving generally good agreement within statistical uncertainty of the samples, although struggling a little with the shape of high-IP tail.
 
 ![Example of IP correction](./readme_plots/example.png)
 
@@ -29,3 +29,5 @@ Then you can execute any of the python scripts within from the top-level directo
 ```
 [user@users-computer ip-calibration-with-nflows]$ ./scripts/tutorial.py
 ```
+
+The repository utilises `pre-commit` to handle formatting of code. Please follow the installation [instructions](https://pre-commit.com/) if you don't already have `pre-commit` to install it in your checkout of the repository.
