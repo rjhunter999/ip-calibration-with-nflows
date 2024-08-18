@@ -1,0 +1,5 @@
+name: Use reusable workflow
+on: [push]
+jobs:
+  call-workflow:
+    uses: .github/workflows/github-ci.yml

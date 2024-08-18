@@ -1,6 +1,6 @@
 name: Build, check formatting and test
 run-name: ${{ github.actor }} pipeline
-on: [push]
+on: [workflow_call]
 jobs:
   TestJob:
     runs-on: ubuntu-latest
