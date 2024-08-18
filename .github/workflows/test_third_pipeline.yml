@@ -5,4 +5,4 @@ jobs:
   call-workflow:
     steps:
       - run: echo "This is the main workflow"
-      - uses: .github/workflows/github-ci.yml
+      - uses: ./.github/workflows/github-ci.yml
