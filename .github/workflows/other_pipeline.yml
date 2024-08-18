@@ -1,7 +1,13 @@
-name: On PR
-on: [pull_request]
+name: Post-PR acceptance checks
+on:
+  pull_request:
+    types:
+      - closed
+
 jobs:
-  Testo:
+  if_merged:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Your other pipeline is running!"
+    - run: |
+        echo "The PR was merged"
