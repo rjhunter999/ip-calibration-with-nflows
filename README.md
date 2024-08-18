@@ -29,3 +29,5 @@ Then you can execute any of the python scripts within from the top-level directo
 ```
 [user@users-computer ip-calibration-with-nflows]$ ./scripts/tutorial.py
 ```
+
+The repository utilises `pre-commit` to handle formatting of code. Please follow the installation [instructions](https://pre-commit.com/) if you don't already have `pre-commit` to install it in your checkout of the repository.
